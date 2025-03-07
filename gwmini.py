@@ -1,65 +1,43 @@
-from PIL import Image
-import numpy as np
+import google.generativeai as genai
+import os
+api_key = os.getenv("GOOGLE_API_KEY")
+# Configure your API key
+genai.configure(api_key="AIzaSyCIwEqi3DiCzIOwTj71cwKWyonNslzbaIA")  # Replace with your actual API key
 
-def estimate_temperature_from_thermal_image(image_path, min_temp_c=0, max_temp_c=100):
-    """
-    Estimates approximate temperature from a thermal image based on pixel intensity.
+model = genai.GenerativeModel('gemini-2.0-flash')  # Or 'gemini-1.0-pro-vision' if you plan to use images
 
-    Args:
-        image_path (str): Path to the thermal image file.
-        min_temp_c (int): Minimum temperature in Celsius for the range.
-        max_temp_c (int): Maximum temperature in Celsius for the range.
+def generate_insights(sorrounding_data, pest_probability):
+    
+    prompt = (
+        "You are a thermal imaging pest detection expert. I will provide you with two pieces of data: "
+        "a dictionary named 'sorrounding_data' containing sensor measurements and a value 'pest_probability' "
+        "indicating the likelihood of pest detection (from 0 to 1).\n\n"
+        "The dictionary 'sorrounding_data' includes the following keys:\n"
+        " - Thermal_Brightness\n"
+        " - Glare_Level\n"
+        " - Surrounding_Brightness\n"
+        " - Thermal_Contrast\n"
+        " - Thermal_Max\n"
+        " - Thermal_Min\n"
+        " - Thermal_Std\n"
+        " - Ambient_Temperature\n\n"
+        "This is the data on which I need insights :\n"
+        f"  sorrounding_data: {sorrounding_data}\n"
+        f"  pest_probability: {pest_probability}\n\n"
+        "Based on these inputs, generate a detailed analysis in a paragraph of 4 to 5 sentences. "
+        "Your analysis should explain how each parameter affects the quality of the thermal image and influences "
+        "the pest detection outcome. Be sure to discuss the role of thermal brightness, glare level, and surrounding "
+        "brightness in establishing the imaging conditions, and how thermal contrast along with maximum, minimum, and "
+        "standard deviation values indicate the presence of temperature anomalies. Also, address the impact of ambient "
+        "temperature on the overall detection capability. Your explanation should be clear, technically sound, and "
+        "presented in a professional tone."
+    )
 
-    Returns:
-        tuple: A tuple containing:
-            - average_temperature_c (float): Approximate average temperature in Celsius.
-            - min_max_temperature_range (tuple): Approximate minimum and maximum temperature in Celsius in the image.
-            - pixel_intensity_stats (tuple): Minimum, maximum, and average pixel intensity.
-    """
     try:
-        img = Image.open(image_path)
-        # Convert to grayscale if it's not already
-        img = img.convert('L')  # 'L' mode is grayscale
-        pixel_data = np.array(img)
-
-        min_pixel_intensity = np.min(pixel_data)
-        max_pixel_intensity = np.max(pixel_data)
-        average_pixel_intensity = np.mean(pixel_data)
-
-        # Simplified linear mapping from pixel intensity to temperature
-        pixel_range = max_pixel_intensity - min_pixel_intensity
-        if pixel_range == 0:
-            average_temperature_c = (min_temp_c + max_temp_c) / 2  # Avoid division by zero if image is uniform color
-            min_temperature_c = average_temperature_c
-            max_temperature_c = average_temperature_c
-        else:
-            average_temperature_c = min_temp_c + (average_pixel_intensity - min_pixel_intensity) * (max_temp_c - min_temp_c) / pixel_range
-            min_temperature_c = min_temp_c + (min_pixel_intensity - min_pixel_intensity) * (max_temp_c - min_temp_c) / pixel_range  # Will always be min_temp_c
-            max_temperature_c = min_temp_c + (max_pixel_intensity - min_pixel_intensity) * (max_temp_c - min_temp_c) / pixel_range  # Will always be max_temp_c
-
-        return average_temperature_c, (min_temperature_c, max_temperature_c), (min_pixel_intensity, max_pixel_intensity, average_pixel_intensity)
-
-    except FileNotFoundError:
-        return None, None, None
+        response = model.generate_content(prompt)
+        return response.text
     except Exception as e:
-        print(f"Error processing image: {e}")
-        return None, None, None
+        return f"Error generating insight: {e}"
 
 
-if __name__ == "__main__":
-    image_file = r'/Users/sanjay/Desktop/hrbot/minor/thermal_image.jpg'
-    if not image_file:
-        print("No image path provided. Exiting.")
-    else:
-        average_temp, temp_range, pixel_stats = estimate_temperature_from_thermal_image(image_file)
 
-        if average_temp is not None:
-            print("\nTemperature Estimation Results:")
-            print(f"  Approximate Average Temperature: {average_temp:.2f} °C")
-            print(f"  Approximate Temperature Range in Image: {temp_range[0]:.2f} °C to {temp_range[1]:.2f} °C")
-            print(f"  Pixel Intensity Statistics:")
-            print(f"    Minimum Pixel Intensity: {pixel_stats[0]}")
-            print(f"    Maximum Pixel Intensity: {pixel_stats[1]}")
-            print(f"    Average Pixel Intensity: {pixel_stats[2]:.2f}")
-        else:
-            print("Could not process the image. Please check the file path and image format.")

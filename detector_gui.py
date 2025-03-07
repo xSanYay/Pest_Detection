@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-
+from gwmini import generate_insights
 # Cache the dataset loading so it doesn't reload on every change.
 @st.cache_data
 def load_data(data_file):
@@ -44,6 +44,9 @@ st.title("Pest Detection Predictor with a Larger Dataset")
 st.sidebar.header("1. Upload Dataset")
 data_file = st.sidebar.file_uploader("Upload CSV Dataset", type=["csv"])
 
+
+
+
 if data_file is not None:
     data = load_data(data_file)
     st.write("### Sample of your dataset")
@@ -67,10 +70,19 @@ if data_file is not None:
     if st.button("Predict"):
         # Convert input data to a DataFrame
         input_df = pd.DataFrame([input_data])
+            
         # Get the probability of pest detection (probability for class 1)
         probability = model.predict_proba(input_df)[0, 1]
+        
+        
+        print(input_data, probability)
+        # send_to_gemini(realtime_data)
+
         st.subheader("Prediction Result")
         st.write(f"**Probability of pest detected:** {probability*100:.2f}%")
-        st.write(f"**Probability of no pest detected:** {(1 - probability)*100:.2f}%")
+        # st.write(f"**Probability of no pest detected:** {(1 - probability)*100:.2f}%")
+        st.write(f"**Insights:**")  
+        st.write((generate_insights(input_data, probability)))
 else:
     st.write("Please upload a CSV dataset with the required columns to continue.")
+
