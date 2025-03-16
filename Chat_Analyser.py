@@ -2,7 +2,7 @@ import google.generativeai as genai
 import os
 api_key = os.getenv("GOOGLE_API_KEY")
 # Configure your API key
-genai.configure(api_key="AIzaSyCIwEqi3DiCzIOwTj71cwKWyonNslzbaIA")  # Replace with your actual API key
+genai.configure(api_key="AIzaSyCIwEqihsrhvOwTj71cwKWyonNsfebaIA")  # Replace with your actual API key
 
 model = genai.GenerativeModel('gemini-2.0-flash')  # Or 'gemini-1.0-pro-vision' if you plan to use images
 
