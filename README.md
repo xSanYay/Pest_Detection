@@ -15,9 +15,9 @@ This repository contains a pest detection system implemented using Python. The p
 ## Installation
 
 To install the required dependencies, run the following command:
-
+```
 ```bash
-pip install -r requirements.txt
+pip install -r req.txt
 ```
 
 ## Usage
